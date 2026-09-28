@@ -6,6 +6,12 @@ export interface OrthogonalConfig {
   apiKey: string;
   /** Custom headers to include in all requests */
   headers?: Record<string, string>;
+  /**
+   * The Orthogonal host to call, with or without `/v1` (e.g.
+   * "http://localhost:3000"). Defaults to the `ORTH_API_URL` environment
+   * variable when set, else https://api.orth.sh.
+   */
+  baseUrl?: string;
 }
 
 /**

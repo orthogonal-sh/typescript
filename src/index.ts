@@ -4,6 +4,30 @@ const VERSION = "0.1.0";
 const BASE_URL = "https://api.orth.sh";
 
 /**
+ * `ORTH_API_URL` (the CLI's override) where the runtime has a `process`;
+ * undefined in browsers and edge runtimes without one, or where reading the
+ * environment is not allowed.
+ */
+function envApiUrl(): string | undefined {
+  try {
+    const proc = (
+      globalThis as { process?: { env?: Record<string, string | undefined> } }
+    ).process;
+    return proc?.env?.ORTH_API_URL;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The host without trailing slashes or `/v1`, so both spellings work: the
+ * CLI's `ORTH_API_URL` carries `/v1`, the Python SDK's `base_url` does not.
+ */
+function apiOrigin(url: string): string {
+  return url.replace(/\/+$/, "").replace(/\/v1$/, "");
+}
+
+/**
  * Coerce an error payload into a human-readable string.
  *
  * Upstream providers surface errors as structured objects (e.g. People Data Labs
@@ -89,6 +113,7 @@ export class OrthogonalRunError extends Error {
 export class Orthogonal {
   private apiKey: string;
   private customHeaders: Record<string, string>;
+  private runUrl: string;
 
   constructor(config: OrthogonalConfig) {
     if (!config.apiKey) {
@@ -96,6 +121,7 @@ export class Orthogonal {
     }
     this.apiKey = config.apiKey;
     this.customHeaders = config.headers || {};
+    this.runUrl = `${apiOrigin(config.baseUrl || envApiUrl() || BASE_URL)}/v1/run`;
   }
 
   /**
@@ -104,7 +130,7 @@ export class Orthogonal {
   async run(options: RunOptions): Promise<RunResponse> {
     const { api, path, query, body } = options;
 
-    const response = await fetch(`${BASE_URL}/v1/run`, {
+    const response = await fetch(this.runUrl, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
