@@ -8,10 +8,13 @@ vi.stubGlobal("fetch", mockFetch);
 describe("Orthogonal", () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    // Keep a developer's own ORTH_API_URL out of the tests.
+    vi.stubEnv("ORTH_API_URL", "");
   });
 
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
   });
 
   describe("constructor", () => {
@@ -24,6 +27,75 @@ describe("Orthogonal", () => {
       expect(() => new Orthogonal({ apiKey: "" })).toThrow(
         "Orthogonal API key is required"
       );
+    });
+  });
+
+  describe("base URL", () => {
+    async function runUrl(client: Orthogonal): Promise<string> {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, price: "0", data: {} }),
+      });
+      await client.run({ api: "test", path: "/test" });
+      return mockFetch.mock.calls[0][0];
+    }
+
+    it("defaults to https://api.orth.sh", async () => {
+      const client = new Orthogonal({ apiKey: "test" });
+      expect(await runUrl(client)).toBe("https://api.orth.sh/v1/run");
+    });
+
+    it("uses a custom baseUrl", async () => {
+      const client = new Orthogonal({
+        apiKey: "test",
+        baseUrl: "http://localhost:3000",
+      });
+      expect(await runUrl(client)).toBe("http://localhost:3000/v1/run");
+    });
+
+    it("trims a trailing slash", async () => {
+      const client = new Orthogonal({
+        apiKey: "test",
+        baseUrl: "https://example.com/",
+      });
+      expect(await runUrl(client)).toBe("https://example.com/v1/run");
+    });
+
+    it("accepts a baseUrl that already ends in /v1", async () => {
+      const client = new Orthogonal({
+        apiKey: "test",
+        baseUrl: "https://example.com/v1/",
+      });
+      expect(await runUrl(client)).toBe("https://example.com/v1/run");
+    });
+
+    it("reads ORTH_API_URL (the CLI's form, with /v1)", async () => {
+      vi.stubEnv("ORTH_API_URL", "http://localhost:3012/v1");
+      const client = new Orthogonal({ apiKey: "test" });
+      expect(await runUrl(client)).toBe("http://localhost:3012/v1/run");
+    });
+
+    it("prefers baseUrl over ORTH_API_URL", async () => {
+      vi.stubEnv("ORTH_API_URL", "http://localhost:3012/v1");
+      const client = new Orthogonal({
+        apiKey: "test",
+        baseUrl: "https://example.com",
+      });
+      expect(await runUrl(client)).toBe("https://example.com/v1/run");
+    });
+
+    it("works without a process global (browsers, edge runtimes)", async () => {
+      vi.stubEnv("ORTH_API_URL", "http://localhost:3012/v1");
+      const realProcess = globalThis.process;
+      let client: Orthogonal;
+      globalThis.process = undefined;
+      try {
+        expect(globalThis.process).toBeUndefined();
+        client = new Orthogonal({ apiKey: "test" });
+      } finally {
+        globalThis.process = realProcess;
+      }
+      expect(await runUrl(client)).toBe("https://api.orth.sh/v1/run");
     });
   });
 

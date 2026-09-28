@@ -113,6 +113,19 @@ const orthogonal = new Orthogonal({
 });
 ```
 
+### Another host
+
+The client calls `https://api.orth.sh` by default. Point it at another Orthogonal host (a local server, a staging deployment) with `baseUrl`, with or without `/v1`:
+
+```typescript
+const orthogonal = new Orthogonal({
+  apiKey: process.env.ORTHOGONAL_API_KEY!,
+  baseUrl: "http://localhost:3000",
+});
+```
+
+Without `baseUrl`, the client reads the `ORTH_API_URL` environment variable (the same one [`@orth/cli`](https://www.npmjs.com/package/@orth/cli) uses, e.g. `ORTH_API_URL=http://localhost:3000/v1`) where the runtime has one.
+
 ## Error Handling
 
 `run()` resolves with the response on success and **throws** an `OrthogonalRunError` on any non-2xx response. The error extends `Error` (so `error.message` and `instanceof Error` work) and carries structured details:
@@ -146,6 +159,7 @@ On a contract violation the `orthogonal` hint tells you exactly what to fix — 
 | --- | --- | --- |
 | `apiKey` | `string` | **Required.** Your Orthogonal API key (`orth_live_…` / `orth_test_…`). |
 | `headers` | `Record<string, string>` | Optional headers sent on every request. |
+| `baseUrl` | `string` | Optional host to call, with or without `/v1`. Defaults to `ORTH_API_URL` when set, else `https://api.orth.sh`. |
 
 ### `orthogonal.run(options)` → `Promise<RunResponse>`
 
