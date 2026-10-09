@@ -25,6 +25,7 @@ Call any API on the Orthogonal platform through one client and one credit balanc
 - [API Reference](#api-reference)
 - [TypeScript](#typescript)
 - [Related](#related)
+- [Development](#development)
 - [License](#license)
 
 ## Why Orthogonal
@@ -182,6 +183,15 @@ The package ships with type definitions and both ESM and CommonJS builds — no 
 
 - **[`@orth/cli`](https://www.npmjs.com/package/@orth/cli)** — the Orthogonal command-line tool.
 - **[`orth`](https://pypi.org/project/orth/)** — the official Python SDK.
+
+## Development
+
+```bash
+npm install                # install dependencies
+npm run build              # build ESM + CJS bundles with tsup
+npx tsc --noEmit           # typecheck (no package.json script yet)
+npm test                   # run the vitest suite
+```
 
 ## License
 
